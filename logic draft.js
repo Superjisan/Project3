@@ -8,7 +8,7 @@ L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={
   attribution: "Map data &copy; <a href=\"https://www.openstreetmap.org/\">OpenStreetMap</a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, Imagery © <a href=\"https://www.mapbox.com/\">Mapbox</a>",
   maxZoom: 18,
   id: "mapbox.streets",
-  accessToken: API_KEY
+  accessToken: "pk.eyJ1Ijoic3VwZXJqaXNhbiIsImEiOiJjanRsbnIwbHMxb2I0NDRwZnh5dGd3OHNoIn0.lDSu_IDSJvuFtox3oDHjYA"
 }).addTo(myMap);
 
 var greenIcon = new L.Icon({
@@ -30,9 +30,8 @@ var redIcon = new L.Icon({
 });
 
 function scalarMultiply(arr, multiplier) {
-  for (var i = 0; i < arr.length; i++)
-  {
-     arr[i] *= multiplier;
+  for (var i = 0; i < arr.length; i++) {
+    arr[i] *= multiplier;
   }
   return arr;
 };
@@ -41,21 +40,18 @@ function scalarMultiply(arr, multiplier) {
 
 function stockColor(stock_price) {
   switch (true) {
-  case (0 < stock_price):
-    return greenIcon
-  case (0 > stock_price):
-    return redIcon
-  //defualt:
+    case (0 < stock_price):
+      return greenIcon
+    case (0 > stock_price):
+      return redIcon
+    //defualt:
     //return redIcon;
   }
 }
 
-d3.csv("DowJonesPlus3_Coordinations.csv").then(function(csvData) {
+d3.csv("DowJonesPlus3_Coordinations.csv").then(function (csvData) {
 
-  for(i = 0; i < csvData.length; i++)
-  {
-  //csvData.forEach(function(data){
-    data = csvData[i];
+  csvData.forEach((data) => {
 
     //var stock_price = -0.25;
 
@@ -79,7 +75,7 @@ d3.csv("DowJonesPlus3_Coordinations.csv").then(function(csvData) {
     */
 
     var four_days_prior = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000);
-    var dd2 = String(four_days_prior.getDate()-1).padStart(2, '0');
+    var dd2 = String(four_days_prior.getDate() - 1).padStart(2, '0');
     var mm2 = String(four_days_prior.getMonth() + 1).padStart(2, '0');
     var yyyy2 = four_days_prior.getFullYear();
     var four_days_prior_API = yyyy2 + '-' + mm2 + '-' + dd2;
@@ -92,58 +88,75 @@ d3.csv("DowJonesPlus3_Coordinations.csv").then(function(csvData) {
     //console.log(url)
 
     d3.json(url)
-    .then(function(response) {
+      .then(function (response, csvData) {
 
-      //console.log("DANIEL -- DO YOUR THING HERE");
-      //console.log(data.dataset.data); // work with this as you see fit
+        //console.log("DANIEL -- DO YOUR THING HERE");
+        //console.log(data.dataset.data); // work with this as you see fit
 
-      var endDate = response.dataset.end_date;
-      var startDate = response.dataset.start_date;
+        var endDate = response.dataset.end_date;
+        var startDate = response.dataset.start_date;
 
-      var stock_information = response.dataset.data; 
+        var stock_information = response.dataset.data;
 
-      var openingPrices = [];
+        var openingPrices = [];
 
-      for(i = 0; i < stock_information.length; i++){
-        var openingPrice = stock_information[i][1];
-        openingPrices.push(openingPrice);
-      }; 
+        for (i = 0; i < stock_information.length; i++) {
+          var openingPrice = stock_information[i][1];
+          openingPrices.push(openingPrice);
+        };
 
-      var lastDate_opening_stock_price = Number(openingPrices[0]);
-      var four_days_prior_opening_stock_price = Number(openingPrices[(openingPrices.length-1)]);
-      var stock_price_difference = lastDate_opening_stock_price - four_days_prior_opening_stock_price;
+        var lastDate_opening_stock_price = Number(openingPrices[0]);
+        var four_days_prior_opening_stock_price = Number(openingPrices[(openingPrices.length - 1)]);
+        var stock_price_difference = lastDate_opening_stock_price - four_days_prior_opening_stock_price;
 
-      console.log(response.dataset.name)
-      console.log(endDate)
-      console.log(startDate)
-      console.log(openingPrices)
-      console.log(lastDate_opening_stock_price)
-      console.log(four_days_prior_opening_stock_price)
-      console.log(stock_price_difference)
+        console.log(response.dataset.name)
+        console.log(endDate)
+        console.log(startDate)
+        console.log(openingPrices)
+        console.log(lastDate_opening_stock_price)
+        console.log(four_days_prior_opening_stock_price)
+        console.log(stock_price_difference)
+
+        stock_price = lastDate_opening_stock_price;
+        var marker = new L.Marker([+data.Latitude, +data.Longitude], { icon: stockColor(stock_price) });
+
+        marker.desc = data.Name + lastDate_opening_stock_price;
+        myMap.addLayer(marker);
+        oms.addMarker(marker);
+
+        var popup = new L.Popup();
+
+        oms.addListener('click', function (marker) {
+          popup.setContent(marker.desc);
+          popup.setLatLng(marker.getLatLng());
+          myMap.openPopup(popup);
+        });
 
 
-    });
+      });
 
-    stock_price = -0.25;
-    var marker = new L.Marker([+data.Latitude, +data.Longitude], {icon: stockColor(stock_price)});
+    // stock_price = -0.25;
+    // var marker = new L.Marker([+data.Latitude, +data.Longitude], { icon: stockColor(stock_price) });
 
-    marker.desc = data.Name;
-    myMap.addLayer(marker);
-    oms.addMarker(marker);
+    // marker.desc = data.Name;
+    // myMap.addLayer(marker);
+    // oms.addMarker(marker);
 
-  }
+    // var popup = new L.Popup();
 
+    // oms.addListener('click', function (marker) {
+    //   popup.setContent(marker.desc);
+    //   popup.setLatLng(marker.getLatLng());
+    //   myMap.openPopup(popup);
+    // });
+
+  });
 });
 
-var oms = new OverlappingMarkerSpiderfier(myMap, {keepSpiderfied: true});
 
-var popup = new L.Popup();
+var oms = new OverlappingMarkerSpiderfier(myMap, { keepSpiderfied: true });
 
-oms.addListener('click', function(marker) {
-  popup.setContent(marker.desc);
-  popup.setLatLng(marker.getLatLng());
-  myMap.openPopup(popup);
-});
+
 
 /*
 var jsondata;
